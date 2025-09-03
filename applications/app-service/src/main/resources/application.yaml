@@ -35,3 +35,8 @@ adapters:
 auth:
   base-url: ${AUTH_BASE_URL}
   api-key: ${AUTH_API_KEY}
+
+security:
+  jwt:
+    secret: ${JWT_SECURITY_SECRET}
+    issuer: ${JWT_SECURITY_ISSUER}

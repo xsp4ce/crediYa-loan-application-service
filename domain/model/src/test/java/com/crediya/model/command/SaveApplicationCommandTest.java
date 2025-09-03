@@ -13,7 +13,7 @@ class SaveApplicationCommandTest {
 	@Test
 	void shouldCreateSaveApplicationCommand() {
 		BigDecimal amount = new BigDecimal("15000.00");
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", amount, 24, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", amount, 24, 1L, 2L);
 
 		assertEquals("12345678", command.documentNumber());
 		assertEquals(amount, command.amount());
@@ -23,7 +23,7 @@ class SaveApplicationCommandTest {
 
 	@Test
 	void shouldHandleNullValues() {
-		SaveApplicationCommand command = new SaveApplicationCommand(null, null, null, null);
+		SaveApplicationCommand command = new SaveApplicationCommand(null, null, null, null, null);
 
 		assertNull(command.documentNumber());
 		assertNull(command.amount());
@@ -34,7 +34,7 @@ class SaveApplicationCommandTest {
 	@Test
 	void shouldBeImmutable() {
 		BigDecimal amount = new BigDecimal("20000.00");
-		SaveApplicationCommand command = new SaveApplicationCommand("87654321", amount, 36, 2L);
+		SaveApplicationCommand command = new SaveApplicationCommand("87654321", amount, 36, 2L, 2L);
 
 		assertEquals("87654321", command.documentNumber());
 		assertEquals(amount, command.amount());
@@ -47,9 +47,9 @@ class SaveApplicationCommandTest {
 		BigDecimal amount1 = new BigDecimal("10000.00");
 		BigDecimal amount2 = new BigDecimal("10000.00");
 
-		SaveApplicationCommand command1 = new SaveApplicationCommand("123", amount1, 12, 1L);
-		SaveApplicationCommand command2 = new SaveApplicationCommand("123", amount2, 12, 1L);
-		SaveApplicationCommand command3 = new SaveApplicationCommand("456", amount1, 12, 1L);
+		SaveApplicationCommand command1 = new SaveApplicationCommand("123", amount1, 12, 1L, 2L);
+		SaveApplicationCommand command2 = new SaveApplicationCommand("123", amount2, 12, 1L, 2L);
+		SaveApplicationCommand command3 = new SaveApplicationCommand("456", amount1, 12, 1L, 2L);
 
 		assertEquals(command1, command2);
 		assertNotEquals(command1, command3);

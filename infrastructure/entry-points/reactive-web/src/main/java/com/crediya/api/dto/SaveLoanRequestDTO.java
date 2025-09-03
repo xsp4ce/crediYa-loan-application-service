@@ -18,4 +18,5 @@ public class SaveLoanRequestDTO {
 	private BigDecimal amount;
 	private Integer term;
 	private Long idLoanType;
+	private Long idUser;
 }

@@ -15,21 +15,22 @@ public class AuthConsumer implements AuthGateway {
 	private final WebClient authClient;
 
 	@Override
-	public Mono<Boolean> existsByDocument(String document) {
+	public Mono<Boolean> existsByDocument(String document, Long idUser) {
 		log.info(AuthLogMessage.CONSUMING_PATH_AUTH_LOGIN);
 		log.info(AuthLogMessage.VERIFYING_USER_DOCUMENT);
 
-		return authClient.post().uri("/api/v1/document/{documentNumber}", document)
-		 .exchangeToMono(resp -> {
-			 if (resp.statusCode().equals(HttpStatus.OK)) {
-				 log.info(AuthLogMessage.DOCUMENT_NOT_FOUND);
-				 return Mono.just(false);
-			 }
-			 if (resp.statusCode().equals(HttpStatus.CONFLICT)) {
-				 log.info(AuthLogMessage.DOCUMENT_ALREADY_EXISTS);
-				 return Mono.just(true);
-			 }
-			 return resp.createException().flatMap(Mono::error);
-		 });
+		var request = new ValidateDocumentRequest(document, idUser);
+
+		return authClient.post().uri("/api/v1/document").bodyValue(request).exchangeToMono(resp -> {
+			if (resp.statusCode().equals(HttpStatus.OK)) {
+				log.info(AuthLogMessage.ID_MATCH);
+				return Mono.just(true);
+			}
+			if (resp.statusCode().equals(HttpStatus.CONFLICT)) {
+				log.info(AuthLogMessage.ID_DONT_MATCH);
+				return Mono.just(false);
+			}
+			return resp.createException().flatMap(Mono::error);
+		});
 	}
 }

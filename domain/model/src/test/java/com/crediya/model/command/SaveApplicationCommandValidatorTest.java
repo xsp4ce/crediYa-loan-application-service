@@ -21,7 +21,8 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldValidateSuccessfullyWithValidCommand() {
-		SaveApplicationCommand validCommand = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, 1L);
+		SaveApplicationCommand validCommand = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, 1L,
+		 2L);
 
 		Mono<Void> result = validator.validate(validCommand);
 
@@ -30,7 +31,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenDocumentNumberIsNull() {
-		SaveApplicationCommand command = new SaveApplicationCommand(null, new BigDecimal("10000.00"), 24, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand(null, new BigDecimal("10000.00"), 24, 1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -40,7 +41,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenDocumentNumberIsBlank() {
-		SaveApplicationCommand command = new SaveApplicationCommand("   ", new BigDecimal("10000.00"), 24, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("   ", new BigDecimal("10000.00"), 24, 1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -49,8 +50,18 @@ class SaveApplicationCommandValidatorTest {
 	}
 
 	@Test
+	void shouldFailWhenDocumentNumberIsInvalid() {
+		SaveApplicationCommand command = new SaveApplicationCommand("123", new BigDecimal("10000.00"), 24, 1L, 2L);
+
+		Mono<Void> result = validator.validate(command);
+
+		StepVerifier.create(result).expectErrorMatches(throwable -> throwable instanceof BusinessException &&
+		 throwable.getMessage().equals(LogMessages.DOCUMENT_MIN_LENGTH)).verify();
+	}
+
+	@Test
 	void shouldFailWhenAmountIsNull() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", null, 24, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", null, 24, 1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -60,7 +71,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenAmountIsZero() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", BigDecimal.ZERO, 24, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", BigDecimal.ZERO, 24, 1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -70,7 +81,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenAmountIsNegative() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("-1000.00"), 24, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("-1000.00"), 24, 1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -80,7 +91,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenTermIsNull() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), null, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), null, 1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -90,7 +101,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenTermIsZero() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 0, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 0, 1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -100,7 +111,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenTermIsNegative() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), -12, 1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), -12, 1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -110,7 +121,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenIdLoanTypeIsNull() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, null);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, null, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -120,7 +131,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenIdLoanTypeIsZero() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, 0L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, 0L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 
@@ -130,7 +141,7 @@ class SaveApplicationCommandValidatorTest {
 
 	@Test
 	void shouldFailWhenIdLoanTypeIsNegative() {
-		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, -1L);
+		SaveApplicationCommand command = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, -1L, 2L);
 
 		Mono<Void> result = validator.validate(command);
 

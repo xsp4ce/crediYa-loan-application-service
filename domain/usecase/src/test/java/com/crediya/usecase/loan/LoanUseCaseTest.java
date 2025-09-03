@@ -52,7 +52,7 @@ class LoanUseCaseTest {
 		loanUseCase =
 		 new LoanUseCase(loanApplicationRepository, typeRepository, authGateway, saveApplicationCommandValidator);
 
-		validCommand = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, 1L);
+		validCommand = new SaveApplicationCommand("12345678", new BigDecimal("10000.00"), 24, 1L, 2L);
 
 		validType = Type.builder().idLoanType(1L).name("Personal Loan").minAmount(new BigDecimal("1000.00"))
 		 .maxAmount(new BigDecimal("50000.00")).interestRate(new BigDecimal("0.15")).automaticValidation(true).build();
@@ -64,14 +64,14 @@ class LoanUseCaseTest {
 	@Test
 	void shouldSaveLoanApplicationSuccessfully() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678")).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
 		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedLoanApplication));
 
 		StepVerifier.create(loanUseCase.save(validCommand)).expectNext(expectedLoanApplication).verifyComplete();
 
 		verify(saveApplicationCommandValidator).validate(validCommand);
-		verify(authGateway).existsByDocument("12345678");
+		verify(authGateway).existsByDocument("12345678", 2L);
 		verify(typeRepository).findById(1L);
 		verify(loanApplicationRepository).save(any(LoanApplication.class));
 	}
@@ -90,21 +90,21 @@ class LoanUseCaseTest {
 	@Test
 	void shouldFailWhenDocumentNumberAlreadyExists() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678")).thenReturn(Mono.just(false));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(false));
 
 		StepVerifier.create(loanUseCase.save(validCommand))
 		 .expectErrorMatches(throwable -> throwable instanceof ValidationException &&
-			throwable.getMessage().equals(ExceptionMessages.DOCUMENT_NOT_FOUND)).verify();
+			throwable.getMessage().equals(ExceptionMessages.LOAN_RESTRICTED)).verify();
 
 		verify(saveApplicationCommandValidator).validate(validCommand);
-		verify(authGateway).existsByDocument("12345678");
+		verify(authGateway).existsByDocument("12345678", 2L);
 		verifyNoInteractions(typeRepository, loanApplicationRepository);
 	}
 
 	@Test
 	void shouldFailWhenLoanTypeDoesNotExist() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678")).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
 		when(typeRepository.findById(1L)).thenReturn(Mono.empty());
 
 		StepVerifier.create(loanUseCase.save(validCommand))
@@ -112,7 +112,7 @@ class LoanUseCaseTest {
 			throwable.getMessage().equals(ExceptionMessages.TYPE_NOT_FOUND + "1")).verify();
 
 		verify(saveApplicationCommandValidator).validate(validCommand);
-		verify(authGateway).existsByDocument("12345678");
+		verify(authGateway).existsByDocument("12345678", 2L);
 		verify(typeRepository).findById(1L);
 		verifyNoInteractions(loanApplicationRepository);
 	}
@@ -121,13 +121,13 @@ class LoanUseCaseTest {
 	void shouldFailWhenTypeRepositoryThrowsError() {
 		RuntimeException repositoryError = new RuntimeException("Database error");
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678")).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
 		when(typeRepository.findById(1L)).thenReturn(Mono.error(repositoryError));
 
 		StepVerifier.create(loanUseCase.save(validCommand)).expectError(RuntimeException.class).verify();
 
 		verify(saveApplicationCommandValidator).validate(validCommand);
-		verify(authGateway).existsByDocument("12345678");
+		verify(authGateway).existsByDocument("12345678", 2L);
 		verify(typeRepository).findById(1L);
 		verifyNoInteractions(loanApplicationRepository);
 	}
@@ -136,12 +136,12 @@ class LoanUseCaseTest {
 	void shouldFailWhenAuthGatewayThrowsError() {
 		RuntimeException authError = new RuntimeException("Auth service error");
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678")).thenReturn(Mono.error(authError));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.error(authError));
 
 		StepVerifier.create(loanUseCase.save(validCommand)).expectError(RuntimeException.class).verify();
 
 		verify(saveApplicationCommandValidator).validate(validCommand);
-		verify(authGateway).existsByDocument("12345678");
+		verify(authGateway).existsByDocument("12345678", 2L);
 		verifyNoInteractions(typeRepository, loanApplicationRepository);
 	}
 
@@ -149,14 +149,14 @@ class LoanUseCaseTest {
 	void shouldFailWhenLoanApplicationRepositoryThrowsError() {
 		RuntimeException saveError = new RuntimeException("Save error");
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678")).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
 		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.error(saveError));
 
 		StepVerifier.create(loanUseCase.save(validCommand)).expectError(RuntimeException.class).verify();
 
 		verify(saveApplicationCommandValidator).validate(validCommand);
-		verify(authGateway).existsByDocument("12345678");
+		verify(authGateway).existsByDocument("12345678", 2L);
 		verify(typeRepository).findById(1L);
 		verify(loanApplicationRepository).save(any(LoanApplication.class));
 	}
@@ -164,7 +164,7 @@ class LoanUseCaseTest {
 	@Test
 	void shouldCreateLoanApplicationWithCorrectStatus() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678")).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
 		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedLoanApplication));
 
@@ -176,7 +176,7 @@ class LoanUseCaseTest {
 	@Test
 	void shouldHandleDifferentLoanTypes() {
 		SaveApplicationCommand businessLoanCommand =
-		 new SaveApplicationCommand("87654321", new BigDecimal("50000.00"), 36, 2L);
+		 new SaveApplicationCommand("87654321", new BigDecimal("50000.00"), 36, 2L, 2L);
 
 		Type businessType = Type.builder().idLoanType(2L).name("Business Loan").minAmount(new BigDecimal("5000.00"))
 		 .maxAmount(new BigDecimal("100000.00")).interestRate(new BigDecimal("0.18")).automaticValidation(false).build();
@@ -186,36 +186,36 @@ class LoanUseCaseTest {
 			.idStatus(StatusEnum.PENDING.getId()).idLoanType(businessLoanCommand.idLoanType()).build();
 
 		when(saveApplicationCommandValidator.validate(businessLoanCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("87654321")).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("87654321", 2L)).thenReturn(Mono.just(true));
 		when(typeRepository.findById(2L)).thenReturn(Mono.just(businessType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(businessLoanApplication));
 
 		StepVerifier.create(loanUseCase.save(businessLoanCommand)).expectNext(businessLoanApplication).verifyComplete();
 
 		verify(saveApplicationCommandValidator).validate(businessLoanCommand);
-		verify(authGateway).existsByDocument("87654321");
+		verify(authGateway).existsByDocument("87654321", 2L);
 		verify(typeRepository).findById(2L);
 		verify(loanApplicationRepository).save(any(LoanApplication.class));
 	}
 
 	@Test
 	void shouldHandleMultipleDocumentNumbers() {
-		SaveApplicationCommand secondCommand = new SaveApplicationCommand("99999999", new BigDecimal("5000.00"), 12, 1L);
+		SaveApplicationCommand secondCommand = new SaveApplicationCommand("99999999", new BigDecimal("5000.00"), 12, 1L, 2L);
 
 		when(saveApplicationCommandValidator.validate(secondCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("99999999")).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("99999999", 2L)).thenReturn(Mono.just(true));
 		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedLoanApplication));
 
 		StepVerifier.create(loanUseCase.save(secondCommand)).expectNext(expectedLoanApplication).verifyComplete();
 
-		verify(authGateway).existsByDocument("99999999");
+		verify(authGateway).existsByDocument("99999999", 2L);
 	}
 
 	@Test
 	void shouldValidateExecutionOrder() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument(anyString())).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument(anyString(), anyLong())).thenReturn(Mono.just(true));
 		when(typeRepository.findById(anyLong())).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedLoanApplication));
 
@@ -226,7 +226,7 @@ class LoanUseCaseTest {
 			loanApplicationRepository);
 
 		inOrder.verify(saveApplicationCommandValidator).validate(validCommand);
-		inOrder.verify(authGateway).existsByDocument("12345678");
+		inOrder.verify(authGateway).existsByDocument("12345678", 2L);
 		inOrder.verify(typeRepository).findById(1L);
 		inOrder.verify(loanApplicationRepository).save(any(LoanApplication.class));
 	}
