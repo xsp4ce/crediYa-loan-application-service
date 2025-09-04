@@ -1,6 +1,8 @@
 package com.crediya.api.auth;
 
 import com.crediya.model.auth.gateways.AuthGateway;
+import com.crediya.model.exceptions.ExceptionMessages;
+import com.crediya.model.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -15,7 +17,7 @@ public class AuthConsumer implements AuthGateway {
 	private final WebClient authClient;
 
 	@Override
-	public Mono<Boolean> existsByDocument(String document, Long idUser) {
+	public Mono<String> existsByDocument(String document, Long idUser) {
 		log.info(AuthLogMessage.CONSUMING_PATH_AUTH_LOGIN);
 		log.info(AuthLogMessage.VERIFYING_USER_DOCUMENT);
 
@@ -24,11 +26,11 @@ public class AuthConsumer implements AuthGateway {
 		return authClient.post().uri("/api/v1/document").bodyValue(request).exchangeToMono(resp -> {
 			if (resp.statusCode().equals(HttpStatus.OK)) {
 				log.info(AuthLogMessage.ID_MATCH);
-				return Mono.just(true);
+				return resp.bodyToMono(ValidateDocumentResponseDTO.class).map(ValidateDocumentResponseDTO::getEmail);
 			}
 			if (resp.statusCode().equals(HttpStatus.CONFLICT)) {
 				log.info(AuthLogMessage.ID_DONT_MATCH);
-				return Mono.just(false);
+				return Mono.error(new ValidationException(ExceptionMessages.LOAN_RESTRICTED));
 			}
 			return resp.createException().flatMap(Mono::error);
 		});

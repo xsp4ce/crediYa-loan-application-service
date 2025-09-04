@@ -1,6 +1,6 @@
 package com.crediya.config;
 
-import com.crediya.model.command.SaveApplicationCommandValidator;
+import com.crediya.model.command.saveapplication.SaveApplicationCommandValidator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

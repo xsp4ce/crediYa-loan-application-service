@@ -1,7 +1,7 @@
 package com.crediya.api.mapper;
 
 import com.crediya.api.dto.SaveLoanRequestDTO;
-import com.crediya.model.command.SaveApplicationCommand;
+import com.crediya.model.command.saveapplication.SaveApplicationCommand;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

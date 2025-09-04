@@ -1,4 +1,4 @@
-package com.crediya.model.command;
+package com.crediya.model.command.saveapplication;
 
 import org.junit.jupiter.api.Test;
 

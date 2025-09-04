@@ -1,5 +1,8 @@
 package com.crediya.r2dbc.loanapplication;
 
+import com.crediya.model.command.loanapplicationsummary.LoanApplicationSummary;
+import com.crediya.model.command.loanapplicationsummary.PageRequest;
+import com.crediya.model.common.Page;
 import com.crediya.model.constants.LogMessages;
 import com.crediya.model.loanapplication.LoanApplication;
 import com.crediya.model.loanapplication.gateways.LoanApplicationRepository;
@@ -27,5 +30,10 @@ public class LoanApplicationRepositoryAdapter extends ReactiveAdapterOperations<
 	public Mono<LoanApplication> save(LoanApplication loanApplication) {
 		log.info(LogMessages.SAVING_APPLICATION_IN_DATABASE);
 		return super.save(loanApplication).as(transactionalOperator::transactional);
+	}
+
+	@Override
+	public Mono<Page<LoanApplicationSummary>> findAllSummaries(PageRequest pageRequest) {
+		return null;
 	}
 }

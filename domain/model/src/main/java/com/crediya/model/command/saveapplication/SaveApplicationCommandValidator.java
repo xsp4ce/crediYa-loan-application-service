@@ -1,4 +1,4 @@
-package com.crediya.model.command;
+package com.crediya.model.command.saveapplication;
 
 import com.crediya.model.constants.LogMessages;
 import com.crediya.model.exceptions.BusinessException;

@@ -1,8 +1,8 @@
 package com.crediya.usecase.loan;
 
 import com.crediya.model.auth.gateways.AuthGateway;
-import com.crediya.model.command.SaveApplicationCommand;
-import com.crediya.model.command.SaveApplicationCommandValidator;
+import com.crediya.model.command.saveapplication.SaveApplicationCommand;
+import com.crediya.model.command.saveapplication.SaveApplicationCommandValidator;
 import com.crediya.model.exceptions.ExceptionMessages;
 import com.crediya.model.exceptions.ValidationException;
 import com.crediya.model.loanapplication.LoanApplication;
@@ -57,14 +57,15 @@ class LoanUseCaseTest {
 		validType = Type.builder().idLoanType(1L).name("Personal Loan").minAmount(new BigDecimal("1000.00"))
 		 .maxAmount(new BigDecimal("50000.00")).interestRate(new BigDecimal("0.15")).automaticValidation(true).build();
 
-		expectedLoanApplication = LoanApplication.builder().amount(validCommand.amount()).term(validCommand.term())
-		 .idStatus(StatusEnum.PENDING.getId()).idLoanType(validCommand.idLoanType()).build();
+		expectedLoanApplication =
+		 LoanApplication.builder().amount(validCommand.amount()).term(validCommand.term()).email("test@example.com")
+			.idStatus(StatusEnum.PENDING.getId()).idLoanType(validCommand.idLoanType()).build();
 	}
 
 	@Test
 	void shouldSaveLoanApplicationSuccessfully() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just("test@example.com"));
 		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedLoanApplication));
 
@@ -88,9 +89,10 @@ class LoanUseCaseTest {
 	}
 
 	@Test
-	void shouldFailWhenDocumentNumberAlreadyExists() {
+	void shouldFailWhenAuthGatewayThrowsValidationException() {
+		ValidationException validationError = new ValidationException(ExceptionMessages.LOAN_RESTRICTED);
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(false));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.error(validationError));
 
 		StepVerifier.create(loanUseCase.save(validCommand))
 		 .expectErrorMatches(throwable -> throwable instanceof ValidationException &&
@@ -104,7 +106,7 @@ class LoanUseCaseTest {
 	@Test
 	void shouldFailWhenLoanTypeDoesNotExist() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just("test@example.com"));
 		when(typeRepository.findById(1L)).thenReturn(Mono.empty());
 
 		StepVerifier.create(loanUseCase.save(validCommand))
@@ -121,7 +123,7 @@ class LoanUseCaseTest {
 	void shouldFailWhenTypeRepositoryThrowsError() {
 		RuntimeException repositoryError = new RuntimeException("Database error");
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just("test@example.com"));
 		when(typeRepository.findById(1L)).thenReturn(Mono.error(repositoryError));
 
 		StepVerifier.create(loanUseCase.save(validCommand)).expectError(RuntimeException.class).verify();
@@ -149,7 +151,7 @@ class LoanUseCaseTest {
 	void shouldFailWhenLoanApplicationRepositoryThrowsError() {
 		RuntimeException saveError = new RuntimeException("Save error");
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just("test@example.com"));
 		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.error(saveError));
 
@@ -164,7 +166,7 @@ class LoanUseCaseTest {
 	@Test
 	void shouldCreateLoanApplicationWithCorrectStatus() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just("test@example.com"));
 		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedLoanApplication));
 
@@ -183,10 +185,11 @@ class LoanUseCaseTest {
 
 		LoanApplication businessLoanApplication =
 		 LoanApplication.builder().amount(businessLoanCommand.amount()).term(businessLoanCommand.term())
-			.idStatus(StatusEnum.PENDING.getId()).idLoanType(businessLoanCommand.idLoanType()).build();
+			.email("business@example.com").idStatus(StatusEnum.PENDING.getId()).idLoanType(businessLoanCommand.idLoanType())
+			.build();
 
 		when(saveApplicationCommandValidator.validate(businessLoanCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("87654321", 2L)).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("87654321", 2L)).thenReturn(Mono.just("business@example.com"));
 		when(typeRepository.findById(2L)).thenReturn(Mono.just(businessType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(businessLoanApplication));
 
@@ -200,10 +203,11 @@ class LoanUseCaseTest {
 
 	@Test
 	void shouldHandleMultipleDocumentNumbers() {
-		SaveApplicationCommand secondCommand = new SaveApplicationCommand("99999999", new BigDecimal("5000.00"), 12, 1L, 2L);
+		SaveApplicationCommand secondCommand =
+		 new SaveApplicationCommand("99999999", new BigDecimal("5000.00"), 12, 1L, 2L);
 
 		when(saveApplicationCommandValidator.validate(secondCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument("99999999", 2L)).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument("99999999", 2L)).thenReturn(Mono.just("test@example.com"));
 		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedLoanApplication));
 
@@ -215,7 +219,7 @@ class LoanUseCaseTest {
 	@Test
 	void shouldValidateExecutionOrder() {
 		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
-		when(authGateway.existsByDocument(anyString(), anyLong())).thenReturn(Mono.just(true));
+		when(authGateway.existsByDocument(anyString(), anyLong())).thenReturn(Mono.just("test@example.com"));
 		when(typeRepository.findById(anyLong())).thenReturn(Mono.just(validType));
 		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedLoanApplication));
 
@@ -229,5 +233,23 @@ class LoanUseCaseTest {
 		inOrder.verify(authGateway).existsByDocument("12345678", 2L);
 		inOrder.verify(typeRepository).findById(1L);
 		inOrder.verify(loanApplicationRepository).save(any(LoanApplication.class));
+	}
+
+	@Test
+	void shouldSaveLoanApplicationWithCorrectEmail() {
+		String expectedEmail = "user@domain.com";
+		when(saveApplicationCommandValidator.validate(validCommand)).thenReturn(Mono.empty());
+		when(authGateway.existsByDocument("12345678", 2L)).thenReturn(Mono.just(expectedEmail));
+		when(typeRepository.findById(1L)).thenReturn(Mono.just(validType));
+
+		LoanApplication expectedWithEmail =
+		 LoanApplication.builder().amount(validCommand.amount()).term(validCommand.term()).email(expectedEmail)
+			.idStatus(StatusEnum.PENDING.getId()).idLoanType(validCommand.idLoanType()).build();
+
+		when(loanApplicationRepository.save(any(LoanApplication.class))).thenReturn(Mono.just(expectedWithEmail));
+
+		StepVerifier.create(loanUseCase.save(validCommand)).expectNext(expectedWithEmail).verifyComplete();
+
+		verify(loanApplicationRepository).save(any(LoanApplication.class));
 	}
 }

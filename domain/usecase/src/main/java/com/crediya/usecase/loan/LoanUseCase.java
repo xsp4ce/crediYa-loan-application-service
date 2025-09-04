@@ -1,8 +1,8 @@
 package com.crediya.usecase.loan;
 
 import com.crediya.model.auth.gateways.AuthGateway;
-import com.crediya.model.command.SaveApplicationCommand;
-import com.crediya.model.command.SaveApplicationCommandValidator;
+import com.crediya.model.command.saveapplication.SaveApplicationCommand;
+import com.crediya.model.command.saveapplication.SaveApplicationCommandValidator;
 import com.crediya.model.exceptions.ValidationException;
 import com.crediya.model.exceptions.ExceptionMessages;
 import com.crediya.model.loanapplication.LoanApplication;
@@ -17,8 +17,8 @@ public record LoanUseCase(LoanApplicationRepository loanApplicationRepository, T
 	public Mono<LoanApplication> save(SaveApplicationCommand cmd) {
 		return saveApplicationCommandValidator.validate(cmd)
 		 .then(Mono.defer(() -> validateDocumentNumberExists(cmd.documentNumber(), cmd.idUser())))
-		 .flatMap(v -> validateLoanTypeExists(cmd.idLoanType()))
-		 .then(Mono.defer(() -> saveLoanApplication(cmd)));
+		 .flatMap(email -> validateLoanTypeExists(cmd.idLoanType())
+		 .then(Mono.defer(() -> saveLoanApplication(cmd, email))));
 	}
 
 	private Mono<Long> validateLoanTypeExists(Long typeId) {
@@ -28,20 +28,14 @@ public record LoanUseCase(LoanApplicationRepository loanApplicationRepository, T
 	}
 
 	private Mono<String> validateDocumentNumberExists(String documentNumber, Long idUser) {
-		return authGateway.existsByDocument(documentNumber, idUser).flatMap(isValid -> {
-			if (Boolean.TRUE.equals(isValid)) {
-				return Mono.just(documentNumber);
-			}
-			else {
-				return Mono.error(new ValidationException(ExceptionMessages.LOAN_RESTRICTED));
-			}
-		});
+		return authGateway.existsByDocument(documentNumber, idUser);
 	}
 
-	private Mono<LoanApplication> saveLoanApplication(SaveApplicationCommand cmd) {
+	private Mono<LoanApplication> saveLoanApplication(SaveApplicationCommand cmd, String email) {
 		var entity = LoanApplication.builder()
 		 .amount(cmd.amount())
 		 .term(cmd.term())
+		 .email(email)
 		 .idStatus(StatusEnum.PENDING.getId())
 		 .idLoanType(cmd.idLoanType())
 		 .build();
