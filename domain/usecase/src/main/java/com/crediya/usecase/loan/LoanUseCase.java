@@ -16,7 +16,7 @@ public record LoanUseCase(LoanApplicationRepository loanApplicationRepository, T
 
 	public Mono<LoanApplication> save(SaveApplicationCommand cmd) {
 		return saveApplicationCommandValidator.validate(cmd)
-		 .then(Mono.defer(() -> validateDocumentNumberExists(cmd.documentNumber())))
+		 .then(Mono.defer(() -> validateDocumentNumberExists(cmd.documentNumber(), cmd.idUser())))
 		 .flatMap(v -> validateLoanTypeExists(cmd.idLoanType()))
 		 .then(Mono.defer(() -> saveLoanApplication(cmd)));
 	}
@@ -27,13 +27,13 @@ public record LoanUseCase(LoanApplicationRepository loanApplicationRepository, T
 		 .thenReturn(typeId);
 	}
 
-	private Mono<String> validateDocumentNumberExists(String documentNumber) {
-		return authGateway.existsByDocument(documentNumber).flatMap(isValid -> {
+	private Mono<String> validateDocumentNumberExists(String documentNumber, Long idUser) {
+		return authGateway.existsByDocument(documentNumber, idUser).flatMap(isValid -> {
 			if (Boolean.TRUE.equals(isValid)) {
 				return Mono.just(documentNumber);
 			}
 			else {
-				return Mono.error(new ValidationException(ExceptionMessages.DOCUMENT_NOT_FOUND));
+				return Mono.error(new ValidationException(ExceptionMessages.LOAN_RESTRICTED));
 			}
 		});
 	}

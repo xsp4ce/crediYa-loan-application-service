@@ -6,7 +6,7 @@ public class ExceptionMessages {
 
 	public static final String STATUS_PENDING_NOT_FOUND = "Status 'PENDING' not found";
 	public static final String TYPE_NOT_FOUND = "Type not found with id: ";
-	public static final String DOCUMENT_NOT_FOUND = "User not found with that document number";
+	public static final String LOAN_RESTRICTED = "Users are restricted to registering loans only for themselves";
 	public static final String FIELD_ALREADY_REGISTERED = "Field is already registered";
 
 	ExceptionMessages() {
